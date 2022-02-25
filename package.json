@@ -6,7 +6,8 @@
   "dependencies": {
     "gh-pages": "2.0.1",
     "react": "^16.8.6",
-    "react-dom": "^16.8.6"
+    "react-dom": "^16.8.6",
+    "styled-components": "5.3.3"
   },
   "devDependencies": {
     "react-scripts": "3.4.3"

@@ -1,44 +1,73 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 
-import { CardList } from './components/card-list/card-list.component';
-import { SearchBox } from './components/search-box/search-box.component';
+import { CardList } from "./components/card-list/card-list.component";
+import { SearchBox } from "./components/search-box/search-box.component";
+import Spinner from "./components/spinner/spinner.component";
 
-import './App.css';
+import "./App.css";
 
-class App extends Component {
-  constructor() {
-    super();
+const App = () => {
+  const [monsters, setMonsters] = useState([]);
+  const [isFectching, setIsFetching] = useState(false);
+  const [searchField, setSearchField] = useState("");
 
-    this.state = {
-      monsters: [],
-      searchField: ''
+  const fetchData = useCallback(async () => {
+    setIsFetching(true);
+    const data = await fetch(
+      "https://random-data-api.com/api/users/random_user?size=10"
+    );
+    const users = data.json();
+    setIsFetching(false);
+    return users;
+  }, []);
+
+  const loadMonsters = useCallback(async () => {
+    const newMonsters = await fetchData();
+    setMonsters((prev) => prev.concat(newMonsters));
+  },[fetchData]);
+
+  const handleScroll = useCallback(async () => {
+    let {
+      innerHeight,
+      scrollY,
+      document: {
+        body: { offsetHeight }
+      }
+    } = window;
+    if (innerHeight + scrollY >= offsetHeight + 48 && !isFectching) {
+      loadMonsters();
+    }
+  }, [isFectching, loadMonsters]);
+
+  useEffect(() => {
+    if (monsters.length === 0) {
+      loadMonsters();
+    }
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
     };
-  }
+  }, [handleScroll, loadMonsters, monsters]); 
 
-  componentDidMount() {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(response => response.json())
-      .then(users => this.setState({ monsters: users }));
-  }
+  const filteredMonsters = monsters.filter((monster) =>
+    (
+      monster.first_name.toLowerCase() + monster.last_name.toLowerCase()
+    ).includes(searchField.toLowerCase())
+  );
 
-  onSearchChange = event => {
-    this.setState({ searchField: event.target.value });
+  const onSearchChange = (event) => {
+    setSearchField(event.target.value);
   };
 
-  render() {
-    const { monsters, searchField } = this.state;
-    const filteredMonsters = monsters.filter(monster =>
-      monster.name.toLowerCase().includes(searchField.toLowerCase())
-    );
-
-    return (
-      <div className='App'>
-        <h1>Monsters Rolodex</h1>
-        <SearchBox onSearchChange={this.onSearchChange} />
-        <CardList monsters={filteredMonsters} />
-      </div>
-    );
-  }
-}
+  return (
+    <div className="App">
+      <h1>Monsters Rolodex</h1>
+      <SearchBox onSearchChange={onSearchChange} />
+      <CardList monsters={filteredMonsters} />
+      <Spinner isFetching={isFectching} />
+    </div>
+  );
+};
 
 export default App;
